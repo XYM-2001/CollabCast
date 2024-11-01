@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  collabcast:
+    build: .
+    ports:
+      - "3000:3000"  # Map port 3000 in the container to port 3000 on the host
+    volumes:
+      - .:/app  # Mount the current directory to /app in the container
+    environment:
+      - BASE_URL=http://localhost:3000
+      - TWITCH_CLIENT_ID=your_client_id
+      - TWITCH_CLIENT_SECRET=your_client_secret
