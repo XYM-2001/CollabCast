@@ -9,6 +9,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+    res.send('Welcome to CollabCast API!');
+});
+
 // Step 2a: Redirect to Twitch for Authentication
 app.get('/auth/twitch', (req, res) => {
     const redirectUri = encodeURIComponent(`${process.env.BASE_URL}/auth/twitch/callback`);
@@ -21,23 +25,27 @@ app.get('/auth/twitch', (req, res) => {
 app.get('/auth/twitch/callback', async (req, res) => {
     const { code } = req.query;
 
+    if (!code) {
+        return res.status(400).send('Code is required');
+    }
+
     try {
-        const response = await axios.post(`https://id.twitch.tv/oauth2/token`, null, {
+        const response = await axios.post('https://id.twitch.tv/oauth2/token', null, {
             params: {
                 client_id: process.env.TWITCH_CLIENT_ID,
                 client_secret: process.env.TWITCH_CLIENT_SECRET,
                 code,
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.BASE_URL}/auth/twitch/callback`,
-            },
+                redirect_uri: `${process.env.BASE_URL}/auth/twitch/callback`
+            }
         });
 
-        const { access_token } = response.data;
-        // Store access_token securely (e.g., in your database)
-        res.json({ access_token });
+        const { access_token, refresh_token, expires_in } = response.data;
+        // Handle tokens (e.g., store them in the database or session)
+        res.send('Authentication successful');
     } catch (error) {
-        console.error(error);
-        res.status(500).send('Authentication failed');
+        console.error('Error during Twitch authentication:', error);
+        res.status(500).send('Internal Server Error');
     }
 });
 
