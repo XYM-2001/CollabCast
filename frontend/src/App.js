@@ -1,22 +1,37 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Chat from './components/Chat';
-import Poll from './components/Poll';
-import StreamEmbed from './components/StreamEmbed';
+import { AppBar, Toolbar, Typography, ThemeProvider, createTheme } from '@mui/material';
+import ChannelSetup from './components/ChannelSetup';
+import Home from './components/Home';
 
-const Home = () => <div>Welcome to CollabCast</div>;
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#673ab7', // Deep Purple
+    },
+    secondary: {
+      main: '#ff4081', // Pink
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+  },
+});
 
 const App = () => (
-  <Router>
-    <div>
+  <ThemeProvider theme={theme}>
+    <Router>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6">CollabCast</Typography>
+        </Toolbar>
+      </AppBar>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/poll" element={<Poll />} />
-        <Route path="/stream/:channel" element={<StreamEmbed />} />
+        <Route path="/" element={<ChannelSetup />} />
+        <Route path="/collab" element={<Home />} />
       </Routes>
-    </div>
-  </Router>
+    </Router>
+  </ThemeProvider>
 );
 
 export default App;

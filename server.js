@@ -3,8 +3,23 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const firebase = require('firebase/app');
+require('firebase/database');
 
 const app = express();
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
+};
+
+firebase.initializeApp(firebaseConfig);
 
 // Middleware
 app.use(cors());
@@ -51,25 +66,29 @@ app.get('/auth/twitch/callback', async (req, res) => {
     }
 });
 
-app.get('/api/user', async (req, res) => {
-    const accessToken = 'stored_access_token'; // Retrieve from your storage
-
-    try {
-        const response = await axios.get('https://api.twitch.tv/helix/users', {
-            headers: {
-                'Client-ID': process.env.TWITCH_CLIENT_ID,
-                'Authorization': `Bearer ${accessToken}`,
-            },
-        });
-        res.json(response.data);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Error fetching user data');
-    }
+// Handle Poll Creation
+app.post('/polls', (req, res) => {
+    const { question, options } = req.body;
+    const pollRef = firebase.database().ref('polls');
+    const newPoll = {
+        question,
+        options,
+        votes: {}
+    };
+    pollRef.push(newPoll);
+    res.status(201).send('Poll created');
 });
 
+// Handle Notifications
+app.post('/notifications', (req, res) => {
+    const { message } = req.body;
+    const notifRef = firebase.database().ref('notifications');
+    notifRef.push({ message });
+    res.status(201).send('Notification sent');
+});
+
+// Webhook for Twitch Events
 app.post('/webhook/twitch', (req, res) => {
-    // Validate signature here
     const eventType = req.headers['twitch-eventsub-message-type'];
 
     if (eventType === 'notification') {
@@ -80,5 +99,9 @@ app.post('/webhook/twitch', (req, res) => {
     res.status(204).send();
 });
 
+function handleEvent(notification) {
+    const notifRef = firebase.database().ref('notifications');
+    notifRef.push({ message: notification.message });
+}
 
 module.exports = app;
